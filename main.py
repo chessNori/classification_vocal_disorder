@@ -1,48 +1,35 @@
-import numpy as np
 import load_data
 import time
 import tensorflow as tf
-from tensorflow.keras.layers import GRU, Dense, TimeDistributed
+from tensorflow.keras.layers import GRU, Dense, TimeDistributed, Conv2D, Flatten
 from tensorflow.keras import Model
 
 batch_size = 16
-lr = 1e-4
+lr = 1e-5
 EPOCHS = 150
 
 start = time.time()
-data = load_data.Data(500)
+train_data = load_data.Data(path_name='train')
+test_data = load_data.Data(path_name='test')
 
-x_data, y_data = data.load_data(0)
-
-for i in range(1, 3):
-    x_temp, y_temp = data.load_data(i)
-    x_data = np.concatenate((x_data, x_temp), axis=0)
-    y_data = np.concatenate((y_data, y_temp), axis=0)
-
-data_test = load_data.Data(100)
-
-x_data_test, y_data_test = data_test.load_data(0)
-
-for i in range(1, 3):
-    x_temp, y_temp = data_test.load_data(i)
-    x_data_test = np.concatenate((x_data_test, x_temp), axis=0)
-    y_data_test = np.concatenate((y_data_test, y_temp), axis=0)
+x_data, y_data = train_data.load_data(5)
+x_data_test, y_data_test = test_data.load_data(5)
 
 
 print("Data Loading is Done! (", time.time() - start, ")")
 print('Shape of train data(x,y):', x_data.shape, y_data.shape)
 print('Shape of test data(x,y):', x_data_test.shape, y_data_test.shape)
 
-train_dataset = tf.data.Dataset.from_tensor_slices((x_data, y_data)).shuffle(1500).batch(batch_size)
+train_dataset = tf.data.Dataset.from_tensor_slices((x_data, y_data)).shuffle(1400).batch(batch_size)
 test_dataset = tf.data.Dataset.from_tensor_slices((x_data_test, y_data_test)).batch(batch_size)
 
 
 class MyModel(Model):
-    def __init__(self):
+    def __init__(self, number_disorder):
         super(MyModel, self).__init__()
-        self.gru = GRU(200, return_sequences=True)
-        self.d1 = TimeDistributed(Dense(100))
-        self.d2 = TimeDistributed(Dense(3, activation='softmax'))
+        self.gru = GRU(300, return_sequences=True)
+        self.d1 = TimeDistributed(Dense(150))
+        self.d2 = TimeDistributed(Dense(number_disorder, activation='softmax'))
 
     def call(self, inputs):
         x = self.gru(inputs)
@@ -52,7 +39,7 @@ class MyModel(Model):
         return x
 
 
-_model = MyModel()
+_model = MyModel(len(train_data.y_data))
 
 optimizer = tf.keras.optimizers.Adam(learning_rate=lr)
 loss_object = tf.keras.losses.CategoricalCrossentropy()
@@ -91,16 +78,20 @@ for epoch in range(EPOCHS):
     test_accuracy.reset_state()
 
     for _x, _y in train_dataset:
-        train_step(_x, _y)
+        _index = tf.cast(_y, tf.int32)
+        _index = tf.one_hot(_index, len(train_data.y_data), axis=-1)
+        train_step(_x, _index)
 
     for _x, _y in test_dataset:
-        test_step(_x, _y)
+        _index = tf.cast(_y, tf.int32)
+        _index = tf.one_hot(_index, len(train_data.y_data), axis=-1)
+        test_step(_x, _index)
 
     print(
         f'Epoch {epoch + 1}, '
         f'Train Loss: {train_loss.result()}, '
-        f'Train Accuracy: {train_accuracy.result()}, '
+        f'Train Accuracy: {train_accuracy.result() * 100}, '
         f'Test Loss: {test_loss.result()}, '
-        f'Test Accuracy: {test_accuracy.result()}, '
+        f'Test Accuracy: {test_accuracy.result() * 100}, '
         f'Time: {time.time() - start} sec'
     )
