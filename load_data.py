@@ -7,7 +7,7 @@ import copy
 
 
 class Data:
-    def __init__(self, resampling=16000, n_fft=512, win_size=320, path_name=None):
+    def __init__(self, resampling=16000, n_fft=512, win_size=512, path_name=None):
         if path_name is None:
             self.path = '..\\datasets\\original_data\\patient-vocal-dataset\\patient-vocal-dataset\\'
         else:
@@ -15,7 +15,7 @@ class Data:
         self.sr = resampling  # We use 8k sampling datasets
         self.n_fft = n_fft  # FFT N value
         self.win_size = win_size
-        self.frame_num = 130  # why?
+        self.frame_num = 260  # why?
         self.padding = n_fft * self.frame_num  # Output results data size for regularization
 
         disorder_dir = [f.path for f in os.scandir(self.path) if f.is_dir()]
@@ -53,7 +53,7 @@ class Data:
         temp = []
         for i in range(len(disorder_dir)):
             temp += [[]]
-            temp[i] = np.zeros((len(self.file_name[i]), self.frame_num), dtype=np.int32) + i
+            temp[i] = np.zeros((len(self.file_name[i])), dtype=np.int32) + i
         self.y_data = copy.deepcopy(temp)
 
     def rnn_shape(self, wave):  # ( 1, frame_num, N/2 )
@@ -126,7 +126,7 @@ class Data:
         x = np.reshape(x, (-1, self.frame_num, self.n_fft//2))
         x.astype(np.float32)
         y = np.array(self.y_data)
-        y = np.reshape(y, (-1, self.frame_num))
+        y = np.reshape(y, (-1))
         y.astype(np.int32)
 
         return x, y
