@@ -7,7 +7,7 @@ import copy
 
 
 class Data:
-    def __init__(self, resampling=16000, n_fft=512, win_size=512, path_name=None):
+    def __init__(self, resampling=8000, n_fft=512, win_size=512, path_name=None):
         if path_name is None:
             self.path = '..\\datasets\\original_data\\patient-vocal-dataset\\patient-vocal-dataset\\'
         else:
