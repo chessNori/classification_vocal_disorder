@@ -75,6 +75,7 @@ class Data:
 
         spectrum = self.rnn_shape(wave)
         spectrum, _ = librosa.magphase(spectrum)
+        # spectrum = np.log10(spectrum + 1e-9)
         spectrum.astype(np.float32)
 
         return spectrum
