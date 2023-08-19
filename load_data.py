@@ -15,7 +15,7 @@ class Data:
         self.sr = resampling  # We use 8k sampling datasets
         self.n_fft = n_fft  # FFT N value
         self.win_size = win_size
-        self.frame_num = 260  # why?
+        self.frame_num = 130  # why?
         self.padding = n_fft * self.frame_num  # Output results data size for regularization
 
         disorder_dir = [f.path for f in os.scandir(self.path) if f.is_dir()]
@@ -58,21 +58,13 @@ class Data:
 
     def rnn_shape(self, wave):  # ( 1, frame_num, N/2 )
         spectrum = librosa.stft(wave, n_fft=self.n_fft, hop_length=self.win_size // 2, win_length=self.win_size,
-                                window='hann')[1:, :self.frame_num]  # (n_fft/2, frame_num)
-        spectrum = np.transpose(spectrum, (1, 0))  # (frame_num, n_fft/2)
-        spectrum = np.expand_dims(spectrum, axis=0)  # (1, frame_num, N/2)
+                                window='hann', axis=-1)[1:, :self.frame_num]  # (n_fft/2, frame_num)
+        spectrum = np.transpose(spectrum, (0, 2, 1))  # (frame_num, n_fft/2)
 
         return spectrum
 
     def rnn_spectrogram(self, disorder_number, file_number):  # return magnitude
-        print("Loading file_" + str(file_number) + ": ", self.file_name[disorder_number][file_number])
-        wave, sr = librosa.load(self.file_name[disorder_number][file_number], sr=self.sr)
-        if wave.shape[0] >= self.padding:
-            wave = wave[:self.padding]
-            print("The file size is bigger than padding size")
-        else:
-            wave = np.concatenate((wave, np.zeros(self.padding - wave.shape[0])), axis=0)
-
+        wave = self.load_wave(disorder_number, file_number)
         spectrum = self.rnn_shape(wave)
         spectrum, _ = librosa.magphase(spectrum)
         spectrum = np.log10(spectrum + 1e-3) + 3
@@ -80,13 +72,26 @@ class Data:
 
         return spectrum
 
+    def load_wave(self, disorder_number, file_number):  # return wave
+        print("Loading file_" + str(file_number) + ": ", self.file_name[disorder_number][file_number])
+        wave, sr = librosa.load(self.file_name[disorder_number][file_number], sr=self.sr)
+        if wave.shape[0] >= self.padding:
+            wave = wave[:self.padding]
+            print("The file size is bigger than padding size")
+        else:
+            wave = np.concatenate((wave, np.zeros(self.padding - wave.shape[0])), axis=0)
+        wave = np.expand_dims(wave, axis=0)
+        return wave
+
     def make_x_data(self):
         for i in range(len(self.file_name)):
-            res = self.rnn_spectrogram(i, 0)
+            # res = self.rnn_spectrogram(i, 0)
+            res = self.load_wave(i, 0)
             # val_max = np.max(res)
             # res /= val_max  # 0.0 ~ 1.0
             for j in range(1, len(self.file_name[i])):
-                res_temp = self.rnn_spectrogram(i, j)
+                # res_temp = self.rnn_spectrogram(i, j)
+                res_temp = self.load_wave(i, j)
                 # val_max = np.max(res_temp)
                 # res_temp /= val_max  # 0.0 ~ 1.0
                 res = np.concatenate((res, res_temp), axis=0)
@@ -124,7 +129,8 @@ class Data:
         self.same_size_data(number_scale)
 
         x = np.array(self.data)
-        x = np.reshape(x, (-1, self.frame_num, self.n_fft//2))
+        # x = np.reshape(x, (-1, self.frame_num, self.n_fft//2))
+        x = np.reshape(x, (-1, self.padding))
         x.astype(np.float32)
         y = np.array(self.y_data)
         y = np.reshape(y, (-1))

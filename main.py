@@ -3,16 +3,16 @@ import time
 import tensorflow as tf
 import models
 
-batch_size = 32
-lr = 1e-6
-EPOCHS = 1000
+batch_size = 8
+lr = 5e-6
+EPOCHS = 300
 
 start = time.time()
 train_data = load_data.Data(path_name='train')
 test_data = load_data.Data(path_name='test')
 
-x_data, y_data = train_data.load_data(5)
-x_data_test, y_data_test = test_data.load_data(5)
+x_data, y_data = train_data.load_data(3)
+x_data_test, y_data_test = test_data.load_data(2)
 
 
 print("Data Loading is Done! (", time.time() - start, ")")
@@ -22,7 +22,7 @@ print('Shape of test data(x,y):', x_data_test.shape, y_data_test.shape)
 train_dataset = tf.data.Dataset.from_tensor_slices((x_data, y_data)).shuffle(5000).batch(batch_size)
 test_dataset = tf.data.Dataset.from_tensor_slices((x_data_test, y_data_test)).batch(batch_size)
 
-_model = models.Vox(len(train_data.y_data))
+_model = models.Vox(len(train_data.y_data), 1024)
 
 optimizer = tf.keras.optimizers.Adam(learning_rate=lr)
 loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
