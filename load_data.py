@@ -75,7 +75,7 @@ class Data:
 
         spectrum = self.rnn_shape(wave)
         spectrum, _ = librosa.magphase(spectrum)
-        # spectrum = np.log10(spectrum + 1e-9)
+        spectrum = np.log10(spectrum + 1e-3) + 3
         spectrum.astype(np.float32)
 
         return spectrum
@@ -83,11 +83,11 @@ class Data:
     def make_x_data(self):
         for i in range(len(self.file_name)):
             res = self.rnn_spectrogram(i, 0)
-            val_max = np.max(res)
+            # val_max = np.max(res)
             # res /= val_max  # 0.0 ~ 1.0
             for j in range(1, len(self.file_name[i])):
                 res_temp = self.rnn_spectrogram(i, j)
-                val_max = np.max(res_temp)
+                # val_max = np.max(res_temp)
                 # res_temp /= val_max  # 0.0 ~ 1.0
                 res = np.concatenate((res, res_temp), axis=0)
             self.data[i] = np.copy(res)

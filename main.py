@@ -1,12 +1,11 @@
 import load_data
 import time
 import tensorflow as tf
-from tensorflow.keras.layers import GRU, Dense, TimeDistributed, Conv2D, Flatten
-from tensorflow.keras import Model
+import models
 
 batch_size = 32
 lr = 1e-6
-EPOCHS = 300
+EPOCHS = 1000
 
 start = time.time()
 train_data = load_data.Data(path_name='train')
@@ -23,30 +22,7 @@ print('Shape of test data(x,y):', x_data_test.shape, y_data_test.shape)
 train_dataset = tf.data.Dataset.from_tensor_slices((x_data, y_data)).shuffle(5000).batch(batch_size)
 test_dataset = tf.data.Dataset.from_tensor_slices((x_data_test, y_data_test)).batch(batch_size)
 
-
-class MyModel(Model):
-    def __init__(self, number_disorder):
-        super(MyModel, self).__init__()
-        self.gru1 = GRU(256, dropout=0.05, return_sequences=True, go_backwards=True)
-        self.gru2 = GRU(256, dropout=0.05, return_sequences=True, go_backwards=True)
-        self.d1 = TimeDistributed(Dense(128, activation='relu'))
-        self.d2 = TimeDistributed(Dense(64, activation='relu'))
-        self.d3 = TimeDistributed(Dense(32, activation='relu'))
-        self.d4 = GRU(16)
-        self.d_output = Dense(number_disorder, activation='softmax')
-
-    def call(self, inputs):
-        x = self.gru1(inputs)
-        x = self.gru2(inputs)
-        x = self.d1(x)
-        x = self.d2(x)
-        x = self.d3(x)
-        x = self.d4(x)
-        x = self.d_output(x)
-        return x
-
-
-_model = MyModel(len(train_data.y_data))
+_model = models.Vox(len(train_data.y_data))
 
 optimizer = tf.keras.optimizers.Adam(learning_rate=lr)
 loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
