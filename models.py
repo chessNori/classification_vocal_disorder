@@ -1,17 +1,17 @@
 import tensorflow as tf
-from tensorflow.keras.layers import GRU, Dense, TimeDistributed, Conv2D, Flatten, Concatenate, MaxPool2D, PReLU
+from tensorflow.keras.layers import LSTM, Dense, TimeDistributed
 from tensorflow.keras import Model
 
 
 class Vox(Model):
     def __init__(self, number_disorder, win_size):
         super(Vox, self).__init__()
-        self.win_size = 512
-        self.gru1 = GRU(256, dropout=0.05, return_sequences=True, go_backwards=True)
+        self.win_size = win_size
+        self.gru1 = LSTM(256, dropout=0.05, return_sequences=True, go_backwards=True)
         self.d1 = TimeDistributed(Dense(128, activation='relu'))
         self.d2 = TimeDistributed(Dense(64, activation='relu'))
         self.d3 = TimeDistributed(Dense(32, activation='relu'))
-        self.gru2 = GRU(16)
+        self.gru2 = LSTM(16)
         self.d_output = Dense(number_disorder, activation='softmax')
 
     def call(self, inputs):

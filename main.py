@@ -22,7 +22,7 @@ print('Shape of test data(x,y):', x_data_test.shape, y_data_test.shape)
 train_dataset = tf.data.Dataset.from_tensor_slices((x_data, y_data)).shuffle(5000).batch(batch_size)
 test_dataset = tf.data.Dataset.from_tensor_slices((x_data_test, y_data_test)).batch(batch_size)
 
-_model = models.Vox(len(train_data.y_data), 1024)
+_model = models.Vox(len(train_data.y_data), 512)
 
 optimizer = tf.keras.optimizers.Adam(learning_rate=lr)
 loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
@@ -79,3 +79,10 @@ for epoch in range(EPOCHS):
         f'Time: {time.time() - start} sec'
     )
     print("Confusion matrix[test]\n", conf_test)
+
+    # if test_accuracy.result() * 100 > 87.5:
+    #     break
+
+_model.save_weights('weight\\easy_checkpoint')
+tf.saved_model.save(_model, 'model\\')
+
