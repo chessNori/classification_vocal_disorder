@@ -4,7 +4,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 //import androidx.room.jarjarred.org.stringtemplate.v4.Interpreter;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.res.AssetFileDescriptor;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
@@ -101,7 +103,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         // 권한 요청.
-        String[] permissions = {android.Manifest.permission.RECORD_AUDIO, android.Manifest.permission.WRITE_EXTERNAL_STORAGE};
+        String[] permissions = {android.Manifest.permission.RECORD_AUDIO, android.Manifest.permission.WRITE_EXTERNAL_STORAGE, android.Manifest.permission.READ_EXTERNAL_STORAGE};
         ActivityCompat.requestPermissions(this, permissions, 0);
 
         startButton = (Button) findViewById(R.id.btnStart);
@@ -256,12 +258,15 @@ public class MainActivity extends AppCompatActivity {
 
                 try{
                     outStream.write(readData.array(), 0, BUFFER_SIZE_RECORDING);
-
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
             }
-
+            try{
+                outStream.close();}
+            catch (IOException e){
+                throw new RuntimeException(e);
+            }
             FileInputStream fis = null;
 
             try {
@@ -275,15 +280,24 @@ public class MainActivity extends AppCompatActivity {
                 for (int l = 0; l < 66560; l++) {
                     byte upward = dis.readByte();
                     byte backward = dis.readByte();
-                    int fuck = (int)upward + 256 * ((int)backward);
+                    int fuck = (int)upward | (((int)backward << 8));
                     res_wave[raw][l] = (float)fuck;
                 }
-                // dis.close();
+                 dis.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
 
             raw += 1;
+
+            Log.d("분석" + raw, Float.toString(res_wave[7][700]));
+            Log.d("분석" + raw, Float.toString(res_wave[7][701]));
+            Log.d("분석" + raw, Float.toString(res_wave[7][702]));
+            Log.d("분석" + raw, Float.toString(res_wave[7][703]));
+            Log.d("분석" + raw, Float.toString(res_wave[7][704]));
+            Log.d("분석" + raw, Float.toString(res_wave[7][705]));
+            Log.d("분석" + raw, Float.toString(res_wave[7][706]));
+            Log.d("분석" + raw, Float.toString(res_wave[7][707]));
 
             if (raw == 8) {
                 int argmax = 0;
@@ -316,18 +330,18 @@ public class MainActivity extends AppCompatActivity {
 //            buffer.clear();
         }
     }
-        private String getBufferReadFailureReason(int errorCode) {
-            switch (errorCode) {
-                case AudioRecord.ERROR_INVALID_OPERATION:
-                    return "ERROR_INVALID_OPERATION";
-                case AudioRecord.ERROR_BAD_VALUE:
-                    return "ERROR_BAD_VALUE";
-                case AudioRecord.ERROR_DEAD_OBJECT:
-                    return "ERROR_DEAD_OBJECT";
-                case AudioRecord.ERROR:
-                    return "ERROR";
-                default:
-                    return "Unknown (" + errorCode + ")";
-            }
+    private String getBufferReadFailureReason(int errorCode) {
+        switch (errorCode) {
+            case AudioRecord.ERROR_INVALID_OPERATION:
+                return "ERROR_INVALID_OPERATION";
+            case AudioRecord.ERROR_BAD_VALUE:
+                return "ERROR_BAD_VALUE";
+            case AudioRecord.ERROR_DEAD_OBJECT:
+                return "ERROR_DEAD_OBJECT";
+            case AudioRecord.ERROR:
+                return "ERROR";
+            default:
+                return "Unknown (" + errorCode + ")";
         }
     }
+}
